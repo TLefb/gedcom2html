@@ -8,6 +8,6 @@ from gedcom2html import Gedcom2html
 
 
 g = Gedcom2html()
-g.options.file_path = "demo/americanpresidents.ged"
-g.options.title = "American Presidents"
+g.options.file_path = "LEFEBVRE.ged"
+g.options.title = "TEST TITLE"
 g.write_html()
