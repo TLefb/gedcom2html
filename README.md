@@ -1,5 +1,18 @@
 # Convert gedcom to html with bootstrap, d3 and jquery using python
 ## Usage
+
+
+
+Questions : 
+En cas de multiples mariages, le quel mettre ?
+
+Pour les lieux (mariage, naissance, etc..) j'affiche quoi ? Il y a plusieurs champs différents, parfois indiqués parfois non.
+Pour le moment j'affiche ville (département)
+
+
+
+
+
 ```
 python gedcom2html_test.py
 ```
