@@ -1228,6 +1228,10 @@ class GedcomParser:
             except:
                pass
             try:
+                person.birth_place = e.get_birth_data()[1]
+            except:
+                pass
+            try:
                person.death_date = datetime.strptime(e.get_death_data()[0], '%d %b %Y').date()
             except:
                pass
