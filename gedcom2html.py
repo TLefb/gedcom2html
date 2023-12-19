@@ -24,7 +24,7 @@ def calc_color(type, level=0, gender='M'):
 
 
 class Html:
-    def __init__(self, p, all_persons, sources, options):
+    def __init__(self, p, all_persons, options):
         self.person = p
         self.options = options
         self.all_persons = all_persons
@@ -65,8 +65,6 @@ class Html:
             "<div class='page-header'><a href='index.html'><span class='fa fa-home'></span> %s</div></a>\n" % self.options.title)
         self.__fid.write("<div class='container'>\n")
 
-
-
     def __write_family(self, id, level):
         white_space = '   ' * (level + 1)
         for index, family in enumerate(self.all_persons[id].family):
@@ -92,7 +90,7 @@ class Html:
                     if level == 0:
                         if len(self.all_persons[child_id].family) > 0:
                             arrow = "<i class='fa fa-arrow-circle-right' id='children_%s' onclick='toggle_tree(\"children_%s\")'></i>" % (
-                            child_id, child_id)
+                                child_id, child_id)
                     self.__fid.write("%s   <li>%s" % (white_space, arrow))
                     self.__fid.write(" %s\n" % (self.all_persons[child_id].string_long))
                     if len(self.all_persons[child_id].family) > 0:
@@ -101,15 +99,37 @@ class Html:
 
     def write_person(self):
         self.__fid.write("<div class='well'>\n")
-        self.__fid.write("<h1>%s</h1>\n" % self.person.string_short)
+        self.__fid.write(f"<h1>{self.person.string_short}</h1>\n")
         self.__fid.write("<ul>\n")
-        if len(self.person.string_dates) > 0:
-            self.__fid.write("<li>%s\n" % self.person.string_dates)
+        # ----- Birth info -----
+        birth_date = self.person.birth_date.strftime('%d/%m/%Y') if self.person.birth_date is not False else "?"
+        birth_town = self.person.birth_place.split(', ')[0] if self.person.birth_place is not False and len(self.person.birth_place.split(', ')) > 0 else "?"
+        birth_department = self.person.birth_place.split(', ')[2] if self.person.birth_place is not False and len(self.person.birth_place.split(', ')) > 2 else "?"
+        self.__fid.write(f"<li>"
+                         f"Né le {birth_date} "
+                         f"à {birth_town} ({birth_department})"
+                         f" </li>\n")
+
+        # ----- Spouse info -----
+        for index, family in enumerate(self.all_persons[self.person.id].family):
+            marriage_date, marriage_place, spouse_name = '?', '?', '?'
+            if hasattr(family, 'spouse_id'):
+                if len(family.spouse_id) > 0:
+                    spouse_name = self.all_persons[family.spouse_id].string_long
+            if hasattr(family, 'marriages'):
+                print("Marriage !")
+                print(family.marriages[0])
+
+            # self.__fid.write("   <li><i class='fa fa-heart' style='color:#faa'></i> %s\n" % (
+
+        self.__fid.write(f"<li>"
+                         f"Marié à "
+                         f" </li>\n")
         # if len(self.person.nick_name)>0:
-        self.__fid.write("<li>First name(s): %s\n" % self.person.first_name)
+        self.__fid.write(f"<li>Prenom: {self.person.first_name}\n")
         if len(self.person.notes) > 0:
             self.__fid.write("<li>%s\n" % self.person.notes)
-        self.__fid.write("<ul>\n")
+        self.__fid.write("</ul>\n")
         self.__fid.write("</div>\n")
 
     def write_parents(self):
@@ -234,7 +254,7 @@ class Html:
         for id, p in self.all_persons.items():
             # print p.color
             self.__fid.write('      {"id": "%s", "birth_year":"%s", "url":"%s", "color": "%s"},\n' % (
-            p.id, p.birth_year, p.link, p.color))
+                p.id, p.birth_year, p.link, p.color))
         self.__fid.write('   ],\n   "links":[\n')
         for id, p in self.all_persons.items():
             for parent_id in p.parent_id:
@@ -287,14 +307,14 @@ class Gedcom2html:
             p.shortest_name = p.first_name.split(' ')[0]
 
         # short_name
-        p.short_name = "%s %s " % (p.shortest_name, p.surname)
+        p.short_name = f"{p.surname} {p.shortest_name} "
 
         # string_short
         if p.gender == 'M':
             s = "<i class='fa fa-mars'></i>"
         else:
             s = "<i class='fa fa-venus'></i>"
-        p.string_short = "%s %s " % (s, p.short_name)
+        p.string_short = f"{s} {p.short_name} "
 
         # string_dates
         s = ""
@@ -323,7 +343,7 @@ class Gedcom2html:
         # string_long
         if len(p.string_dates) > 0:
             p.string_long = (
-                        "<a href='%s'>%s</a> <span class='dates'>%s</span>" % (p.link, p.string_short, p.string_dates))
+                    "<a href='%s'>%s</a> <span class='dates'>%s</span>" % (p.link, p.string_short, p.string_dates))
         else:
             p.string_long = ("<a href='%s'>%s</a>" % (p.link, p.string_short))
 
@@ -336,8 +356,6 @@ class Gedcom2html:
         self.__copy_assets(self.options.file_path)
         g = GedcomParser(self.options.file_path)
         all_persons = g.get_persons()
-        sources = g.get_sources()
-        id_list = all_persons.keys()
         id_list = list(all_persons.keys())
         id_list.sort()
         for id in id_list:
@@ -348,5 +366,6 @@ class Gedcom2html:
             self.__write_index_html(all_persons[id_list[0]].link)
         for id in id_list:
             p = all_persons[id]
-            h = Html(p, all_persons, sources, self.options)
-            # stop
+            h = Html(p, all_persons, self.options)
+        # p = all_persons[id_list[1]]
+        # h = Html(p, all_persons, self.options)
