@@ -228,10 +228,9 @@ class Gedcom:
         last_element = self.__root_element
         for line in gedcom_file:
             try:
-               last_element = self.__parse_line(line_number, line.decode('utf-8'), last_element)
+                last_element = self.__parse_line(line_number, line.decode('utf-8'), last_element)
             except:
-               print(line_number)
-               print(line)
+                pass
             line_number += 1
 
     @staticmethod
@@ -322,16 +321,23 @@ class Gedcom:
         # Get and analyze families where individual is spouse.
         families = self.get_families(individual, GEDCOM_TAG_FAMILY_SPOUSE)
         for family in families:
+            spouse_id = None
+            marriage_date = None
+            marriage_place = None
             for family_data in family.get_child_elements():
+                if family_data.get_tag() in [GEDCOM_TAG_WIFE, GEDCOM_TAG_HUSBAND]:
+                    family_member_id = family_data.get_value().replace('@', '')
+                    individual_id = element_get_id(individual)
+                    if family_member_id != individual_id:
+                        spouse_id = family_member_id
                 if family_data.get_tag() == GEDCOM_TAG_MARRIAGE:
                     for marriage_data in family_data.get_child_elements():
-                        date = ''
-                        place = ''
                         if marriage_data.get_tag() == GEDCOM_TAG_DATE:
-                            date = marriage_data.get_value()
+                            marriage_date = marriage_data.get_value()
                         if marriage_data.get_tag() == GEDCOM_TAG_PLACE:
-                            place = marriage_data.get_value()
-                        marriages.append((date, place))
+                            marriage_place = marriage_data.get_value()
+            if marriage_date or marriage_place or spouse_id:
+                marriages.append((marriage_date, marriage_place, spouse_id))
         return marriages
 
     def get_marriage_years(self, individual):
@@ -518,7 +524,7 @@ class Gedcom:
         else:
             open_file.write(self.get_root_element().get_individual().encode('utf-8'))
 
-            
+
 class GedcomParseError(Exception):
     """Exception raised when a GEDCOM parsing error occurs"""
 
@@ -1127,14 +1133,14 @@ class Element:
             if child.get_tag() == GEDCOM_TAG_DEATH:
                 return True
         return False
-        
+
     def get_notes(self):
-        s = '' 
+        s = ''
         if not self.is_individual():
             return s
         for child in self.get_child_elements():
             if child.get_tag() == GEDCOM_TAG_NOTES:
-               s = child.get_value()
+                s = child.get_value()
         return s
 
     def get_individual(self):
@@ -1168,94 +1174,163 @@ class Element:
         result += self.__crlf
         return result
 
-        
+
 class Source:
-   def __init__(self):
-      self.title = ""
-      self.publication = ""
-      
+    def __init__(self):
+        self.title = ""
+        self.publication = ""
+
+
 class Family:
-   def __init__(self):
-      self.child_id = []
-      self.spouse_id = ""
+    def __init__(self):
+        self.child_id = []
+        self.spouse_id = ""
+
 
 class Person:
-   def __init__(self):
-      self.id = ""
-      self.first_name = ""
-      self.surname = ""
-      self.nick_name = ""
-      self.notes = ""
-      self.text = ""
-      self.occupation = ""
-      self.gender = ""
-      self.birth_date = False
-      self.birth_place = ""
-      self.death_date = False
-      self.death_place = ""
-      self.parent_id = []
-      self.family = []
-      
-class GedcomParser:
-   def __init__(self, filepath):
-      self.__g = Gedcom(filepath)
-      
-   def get_sources(self):
-      sources = {}
-      for e in self.__g.get_element_list():
-         if e.is_source():
-            s = Source()
-            s.id = self.__element_get_id(e)
-            s.title = e.get_source_title()
-            s.publication = e.get_source_publication()
-            sources[s.id] = s
-      return(sources)
-      
-   def get_persons(self):
-      persons = {}
-      for e in self.__g.get_element_list():
-         if e.is_individual():
-            person = Person()
-            person.id = self.__element_get_id(e)
-            person.first_name = e.get_name()[0]
-            person.surname = e.get_name()[1]
-            person.nick_name = e.get_name()[2]
-            person.notes = e.get_notes()
-            person.occupation = e.get_occupation()
-            person.gender = e.get_gender()
-            try:
-               person.birth_date = datetime.strptime(e.get_birth_data()[0], '%d %b %Y').date()
-            except:
-               pass
-            try:
-                person.birth_place = e.get_birth_data()[1]
-            except:
-                pass
-            try:
-               person.death_date = datetime.strptime(e.get_death_data()[0], '%d %b %Y').date()
-            except:
-               pass
-            # parents
-            for parent_element in self.__g.get_parents(e):
-               person.parent_id.append(self.__element_get_id(parent_element))
-            # families
-            for family_element in self.__g.get_families(e):
-               family = Family()
-               for tag in ['HUSB','WIFE']:
-                  p = self.__g.get_family_members(family_element, tag)
-                  if len(p) > 0:
-                     spouse_id = self.__element_get_id(p[0])
-                     if (person.id != spouse_id):
-                           family.spouse_id = spouse_id 
-               pl = self.__g.get_family_members(family_element, 'CHIL')
-               if len(pl) > 0:
-                  for p in pl:
-                     family.child_id.append(self.__element_get_id(p))
-               if len(family.spouse_id) > 0 or len(family.child_id) > 0:
-                  person.family.append(family)
-            # add dict to list            
-            persons[person.id] = person
-      return(persons)
+    def __init__(self):
+        self.id = ""
+        self.first_name = ""
+        self.surname = ""
+        self.nick_name = ""
+        self.notes = ""
+        self.text = ""
+        self.occupation = ""
+        self.gender = ""
+        self.birth_date = False
+        self.birth_place = ""
+        self.death_date = False
+        self.death_place = ""
+        self.current_marriage = None
+        self.parent_id = []
+        self.family = []
 
-   def __element_get_id(self, e):
-      return(e.get_pointer().replace("@",""))
+
+class GedcomParser:
+    def __init__(self, filepath):
+        self.__g = Gedcom(filepath)
+
+    def get_sources(self):
+        sources = {}
+        for e in self.__g.get_element_list():
+            if e.is_source():
+                s = Source()
+                s.id = element_get_id(e)
+                s.title = e.get_source_title()
+                s.publication = e.get_source_publication()
+                sources[s.id] = s
+        return (sources)
+
+    def get_persons(self):
+        persons = {}
+        for e in self.__g.get_element_list():
+            if e.is_individual():
+                person = Person()
+                person.id = element_get_id(e)
+                person.first_name = e.get_name()[0]
+                person.surname = e.get_name()[1]
+                person.nick_name = e.get_name()[2]
+                person.notes = e.get_notes()
+                person.occupation = e.get_occupation()
+                person.gender = e.get_gender()
+                # Find the most recent marriage
+                marriages = self.__g.get_marriages(e)
+                if marriages:
+                    spouse_element = self.__find_spouse(e, marriages[-1])
+                    spouse_name = get_full_name(spouse_element) if spouse_element else "?"
+                    person.current_marriage = {
+                        "date": parse_custom_date(marriages[-1][0]) if marriages[-1][0] else "?",
+                        "place": marriages[-1][1] if marriages[-1][1] else "?",
+                        "spouse_name": spouse_name
+                    }
+                    # print(person.current_marriage)
+                try:
+                    person.birth_date = datetime.strptime(e.get_birth_data()[0], '%d %b %Y').date()
+                except:
+                    pass
+                try:
+                    person.birth_place = e.get_birth_data()[1]
+                except:
+                    pass
+                try:
+                    person.death_date = datetime.strptime(e.get_death_data()[0], '%d %b %Y').date()
+                except:
+                    pass
+                # parents
+                for parent_element in self.__g.get_parents(e):
+                    person.parent_id.append(element_get_id(parent_element))
+                # families
+                for family_element in self.__g.get_families(e):
+                    family = Family()
+                    for tag in ['HUSB', 'WIFE']:
+                        p = self.__g.get_family_members(family_element, tag)
+                        if len(p) > 0:
+                            spouse_id = element_get_id(p[0])
+                            if person.id != spouse_id:
+                                family.spouse_id = spouse_id
+                    pl = self.__g.get_family_members(family_element, 'CHIL')
+                    if len(pl) > 0:
+                        for p in pl:
+                            family.child_id.append(element_get_id(p))
+                    if len(family.spouse_id) > 0 or len(family.child_id) > 0:
+                        person.family.append(family)
+                # add dict to list
+                persons[person.id] = person
+        return persons
+
+    def __find_spouse(self, individual, marriage):
+        """
+       Find the spouse element based on the marriage data.
+       :type individual: Element
+       :type marriage: tuple (date, place)
+       :rtype: Element or None
+       """
+        # Find all families where the individual is a spouse
+        families = self.__g.get_families(individual, GEDCOM_TAG_FAMILY_SPOUSE)
+
+        for family in families:
+            # Check if the marriage date and place match
+            for family_data in family.get_child_elements():
+                if family_data.get_tag() == GEDCOM_TAG_MARRIAGE:
+                    marriage_date = None
+                    marriage_place = None
+                    for marriage_data in family_data.get_child_elements():
+                        if marriage_data.get_tag() == GEDCOM_TAG_DATE:
+                            marriage_date = marriage_data.get_value()
+                        elif marriage_data.get_tag() == GEDCOM_TAG_PLACE:
+                            marriage_place = marriage_data.get_value()
+
+                    # Compare the date and place with the provided marriage event
+                    if marriage_date == marriage[0] and marriage_place == marriage[1]:
+                        # This is the correct family, find the spouse
+                        for member in self.__g.get_family_members(family, "PARENTS"):
+                            if member.get_pointer() != individual.get_pointer():
+                                return member
+        return None
+
+
+def element_get_id(e):
+    return e.get_pointer().replace("@", "")
+
+
+def get_full_name(individual):
+    # Return the full name of the individual
+    first_name, surname, _ = individual.get_name()
+    return f"{first_name} {surname}"
+
+def parse_custom_date(date_string):
+    # Check for non-standard date formats and handle them
+    if date_string.startswith("BEF"):
+        # Handle 'Before' dates
+        return f"Avant {date_string[4:]}"
+    elif date_string.startswith("AFT"):
+        # Handle 'After' dates
+        return f"Après {date_string[4:]}"
+    # Add more conditions for other non-standard formats as needed
+
+    # Try parsing the standard date format
+    try:
+        return datetime.strptime(date_string, '%d %b %Y').date()
+    except ValueError:
+        # If the format doesn't match, return the original string or a placeholder
+        return date_string if date_string else "?"  # or "Unknown Date"

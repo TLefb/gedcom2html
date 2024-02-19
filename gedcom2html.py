@@ -24,7 +24,8 @@ def calc_color(type, level=0, gender='M'):
 
 
 class Html:
-    def __init__(self, p, all_persons, options):
+    def __init__(self, g, p, all_persons, options):
+        self.gedcom = g
         self.person = p
         self.options = options
         self.all_persons = all_persons
@@ -103,28 +104,22 @@ class Html:
         self.__fid.write("<ul>\n")
         # ----- Birth info -----
         birth_date = self.person.birth_date.strftime('%d/%m/%Y') if self.person.birth_date is not False else "?"
-        birth_town = self.person.birth_place.split(', ')[0] if self.person.birth_place is not False and len(self.person.birth_place.split(', ')) > 0 else "?"
-        birth_department = self.person.birth_place.split(', ')[2] if self.person.birth_place is not False and len(self.person.birth_place.split(', ')) > 2 else "?"
+        birth_town = self.person.birth_place.split(', ')[0] if self.person.birth_place is not False and len(
+            self.person.birth_place.split(', ')) > 0 else "?"
+        birth_department = self.person.birth_place.split(', ')[2] if self.person.birth_place is not False and len(
+            self.person.birth_place.split(', ')) > 2 else "?"
         self.__fid.write(f"<li>"
                          f"Né le {birth_date} "
                          f"à {birth_town} ({birth_department})"
                          f" </li>\n")
 
         # ----- Spouse info -----
-        for index, family in enumerate(self.all_persons[self.person.id].family):
-            marriage_date, marriage_place, spouse_name = '?', '?', '?'
-            if hasattr(family, 'spouse_id'):
-                if len(family.spouse_id) > 0:
-                    spouse_name = self.all_persons[family.spouse_id].string_long
-            if hasattr(family, 'marriages'):
-                print("Marriage !")
-                print(family.marriages[0])
 
-            # self.__fid.write("   <li><i class='fa fa-heart' style='color:#faa'></i> %s\n" % (
-
-        self.__fid.write(f"<li>"
-                         f"Marié à "
-                         f" </li>\n")
+        # self.__fid.write(f"<li>"
+        #                  f"Marié le {self.person.current_marriage['date']}"
+        #                  f"à {self.person.current_marriage['place']}"
+        #                  f"avec {self.person.current_marriage['spouse_name']}"
+        #                  f" </li>\n")
         # if len(self.person.nick_name)>0:
         self.__fid.write(f"<li>Prenom: {self.person.first_name}\n")
         if len(self.person.notes) > 0:
@@ -366,6 +361,6 @@ class Gedcom2html:
             self.__write_index_html(all_persons[id_list[0]].link)
         for id in id_list:
             p = all_persons[id]
-            h = Html(p, all_persons, self.options)
+            h = Html(g, p, all_persons, self.options)
         # p = all_persons[id_list[1]]
         # h = Html(p, all_persons, self.options)

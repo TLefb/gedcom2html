@@ -1,0 +1,71 @@
+
+    <html>
+    <head>
+        <title> agnes</title>
+        <meta charset="UTF-8"> <!-- Specify the character encoding for the HTML document -->
+        <style>
+            .container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+            .person-info {
+                display: flex;
+                justify-content: space-between;
+                width: 80%; /* Adjust based on preference */
+                margin-bottom: 20px; /* Space between person-info and family-info */
+            }
+            .images img {
+                width: 100px; /* Adjust image width as needed */
+                height: auto;
+            }
+            .info {
+                flex-grow: 1;
+                margin: 0 20px; /* Adjust space between the text and images */
+                text-align: center; /* Center person's information */
+            }
+            .family-info, .notes {
+                width: 80%; /* Match width of person-info for alignment */
+                text-align: left; /* Align text to left */
+                margin-bottom: 10px; /* Space between sections */
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="person-info">
+                <div class="images">
+                    <img src="../blason_lfa.jpg" alt="Left Image">
+                </div>
+                <div class="info">
+                    <div class="name"> agnes</div>
+                    <ul>
+                        <li>Né le : ? à </li>
+                        <li>Marié(e) le : ? avec de LA GARDE jourdan à ?</li>
+                        <li>Mort le : ('?',) à </li>
+                        <li>Profession: </li>
+                    </ul>
+                </div>
+                <div class="images">
+                    <img src="../blason_lfa.jpg" alt="Right Image">
+                </div>
+            </div>
+            <div class="family-info">
+                <h3>Parents</h3>
+                <p>Mère: ?</p>
+                <p>Père: ?</p>
+            </div>
+            <div class="family-info">
+                <h3>Enfants</h3>
+                <ul>
+                    <li>de LA GARDE gaucelin</li>
+                </ul>
+            </div>
+            <div class="notes">
+                <h3>Notes</h3>
+                <p>...</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    
