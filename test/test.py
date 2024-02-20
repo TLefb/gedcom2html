@@ -1,20 +1,12 @@
-# Import necessary libraries
-# You might need to install a gedcom parsing library or implement parsing functions based on your file's structure.
-import os
-
-import codecs
-import os
-import shutil
-import string
-
 from gedcomParser import GedcomParser
 
 
 # Define a class to hold and process individual's information
 class Individual:
-    def __init__(self, id, name, birth_date, birth_place, death_date, death_place, marriage_date, marriage_place,
-                 spouse_name, profession, father_name, mother_name, children):
+    def __init__(self, id, gender, name, birth_date, birth_place, death_date, death_place, marriage_date, marriage_place,
+                 spouse_name, profession, father_name, mother_name, children, notes):
         self.id = id
+        self.gender = gender
         self.name = name
         self.birth_date = birth_date
         self.birth_place = birth_place
@@ -27,13 +19,14 @@ class Individual:
         self.father_name = father_name
         self.mother_name = mother_name
         self.children = children  # This should be a list of children's names
+        self.notes = notes  # This should be a list of children's names
 
 
 # Assuming you have a way to parse your GEDCOM file, fill the individuals list with Individual objects.
 individuals = []  # Populate this list with Individual objects based on your GEDCOM file.
 
 
-
+# Function to generate HTML content for each individual
 def generate_html(individual):
     # HTML template with CSS for layout
     html_template = f"""
@@ -60,12 +53,18 @@ def generate_html(individual):
             .info {{
                 flex-grow: 1;
                 margin: 0 20px; /* Adjust space between the text and images */
-                text-align: center; /* Center person's information */
+                text-align: left; /* Align person's information to the left */
             }}
             .family-info, .notes {{
                 width: 80%; /* Match width of person-info for alignment */
                 text-align: left; /* Align text to left */
                 margin-bottom: 10px; /* Space between sections */
+            }}
+            hr {{
+                width: 80%; /* Match width of other sections for alignment */
+                border: 0;
+                border-top: 1px solid #ccc; /* Style for horizontal line */
+                margin: 20px 0; /* Space above and below the line */
             }}
         </style>
     </head>
@@ -73,7 +72,7 @@ def generate_html(individual):
         <div class="container">
             <div class="person-info">
                 <div class="images">
-                    <img src="../blason_lfa.jpg" alt="Left Image">
+                    <img src="../image_gauche.jpg" alt="Left Image">
                 </div>
                 <div class="info">
                     <div class="name">{individual.name}</div>
@@ -85,23 +84,26 @@ def generate_html(individual):
                     </ul>
                 </div>
                 <div class="images">
-                    <img src="../blason_lfa.jpg" alt="Right Image">
+                    <img src="../image_droite.jpg" alt="Right Image">
                 </div>
             </div>
+            <hr>
             <div class="family-info">
                 <h3>Parents</h3>
                 <p>Mère: {individual.mother_name if individual.mother_name else 'Unknown'}</p>
                 <p>Père: {individual.father_name if individual.father_name else 'Unknown'}</p>
             </div>
+            <hr>
             <div class="family-info">
                 <h3>Enfants</h3>
                 <ul>
                     {''.join(f"<li>{child}</li>" for child in individual.children)}
                 </ul>
             </div>
+            <hr>
             <div class="notes">
                 <h3>Notes</h3>
-                <p>...</p>
+                <p>{individual.notes}</p>
             </div>
         </div>
     </body>
@@ -143,6 +145,7 @@ def main():
 
         indiv = Individual(
             id=_id,
+            gender=p.gender,
             name=f"{p.surname} {p.first_name}",
             birth_date=birth_date,
             birth_place=p.birth_place,
@@ -154,7 +157,8 @@ def main():
             profession=p.occupation,
             mother_name=mother_name,
             father_name=father_name,
-            children=children
+            children=children,
+            notes=p.notes
         )
 
         html_content = generate_html(indiv)
